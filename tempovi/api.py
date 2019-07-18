@@ -50,34 +50,14 @@ class TempoApi:
             url = data["metadata"]["next"]
 
     def create_worklog(self, worklog: Worklog) -> None:
-        data = {
-            "authorAccountId": self.user_id,
-            "billableSeconds": None,
-            "description": worklog.description,
-            "issueKey": worklog.issue,
-            "remainingEstimateSeconds": None,
-            "startDate": str(worklog.date),
-            "startTime": "00:00:00",
-            "timeSpentSeconds": worklog.duration.total_seconds(),
-        }
-
+        data = self._serialize_worklog(worklog)
         response = self.session.post(
             "https://api.tempo.io/core/3/worklogs", json=data
         )
         response.raise_for_status()
 
     def update_worklog(self, worklog: Worklog) -> None:
-        data = {
-            "authorAccountId": self.user_id,
-            "billableSeconds": None,
-            "description": worklog.description,
-            "issueKey": worklog.issue,
-            "remainingEstimateSeconds": None,
-            "startDate": str(worklog.date),
-            "startTime": "00:00:00",
-            "timeSpentSeconds": worklog.duration.total_seconds(),
-        }
-
+        data = self._serialize_worklog(worklog)
         response = self.session.put(
             f"https://api.tempo.io/core/3/worklogs/{worklog.id}", json=data
         )
@@ -88,3 +68,15 @@ class TempoApi:
             f"https://api.tempo.io/core/3/worklogs/{worklog_id}"
         )
         response.raise_for_status()
+
+    def _serialize_worklog(self, worklog: Worklog) -> T.Any:
+        return {
+            "authorAccountId": self.user_id,
+            "billableSeconds": None,
+            "description": worklog.description,
+            "issueKey": worklog.issue,
+            "remainingEstimateSeconds": None,
+            "startDate": str(worklog.date),
+            "startTime": "00:00:00",
+            "timeSpentSeconds": worklog.duration.total_seconds(),
+        }
