@@ -78,10 +78,9 @@ def dump_worklogs(worklogs: T.Iterable[Worklog], file: T.IO[str]) -> None:
         total_time = datetime.timedelta(
             seconds=sum(worklog.duration.total_seconds() for worklog in group)
         )
-        max_time = datetime.timedelta(hours=8)
 
         print(file=file)
-        print(f"# {date} - {total_time} of {max_time}", file=file)
+        print(f"# {date} - total time: {total_time}", file=file)
 
         for worklog in group:
             for column, column_width in zip(columns, column_widths):
