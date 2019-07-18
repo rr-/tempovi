@@ -2,6 +2,7 @@
 import datetime
 import itertools
 import os
+import re
 import tempfile
 import typing as T
 from dataclasses import dataclass
@@ -61,7 +62,7 @@ class WorklogDiff:
 
 
 def dump_worklogs(worklogs: T.Iterable[Worklog], file: T.IO[str]) -> None:
-    columns = ["id", "date", "duration", "issue", "description"]
+    columns = ["id", "duration", "issue", "description"]
     column_widths = [
         max(len(str(getattr(worklog, column))) for worklog in worklogs)
         for column in columns
@@ -93,18 +94,28 @@ def dump_worklogs(worklogs: T.Iterable[Worklog], file: T.IO[str]) -> None:
 
 
 def read_worklogs(file: T.IO[str]) -> T.Iterable[Worklog]:
+    last_date: T.Optional[datetime.date] = None
     for line in file:
         if not line.strip():
             continue
-        if line.startswith("#"):
+
+        match = re.search(r"#.*(\d{4}-\d{2}-\d{2})", line)
+        if match:
+            last_date = dateutil.parser.parse(match.group(1)).date()
             continue
+        elif line.startswith("#"):
+            last_date = None
+            continue
+
         row = [word.strip() for word in line.split("|")]
+        if not last_date:
+            raise ValueError("unknown date")
         yield Worklog(
             id=int(row[0]) if row[0] else None,
-            date=dateutil.parser.parse(row[1]).date(),
-            duration=datetime.timedelta(seconds=pytimeparse.parse(row[2])),
-            issue=row[3],
-            description=row[4],
+            date=last_date,
+            duration=datetime.timedelta(seconds=pytimeparse.parse(row[1])),
+            issue=row[2],
+            description=row[3],
         )
 
 
