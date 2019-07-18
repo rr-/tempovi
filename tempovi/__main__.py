@@ -67,7 +67,10 @@ def dump_worklogs(worklogs: T.Iterable[Worklog], file: T.IO[str]) -> None:
         for column in columns
     ]
 
-    is_first_day = True
+    print("# syntax:", file=file)
+    print("# " + " | ".join(columns), file=file)
+    print("# when adding a new item, leave the id column empty.", file=file)
+
     for date, group_iter in itertools.groupby(
         worklogs, key=lambda worklog: worklog.date
     ):
@@ -77,9 +80,7 @@ def dump_worklogs(worklogs: T.Iterable[Worklog], file: T.IO[str]) -> None:
         )
         max_time = datetime.timedelta(hours=8)
 
-        if not is_first_day:
-            print(file=file)
-        is_first_day = None
+        print(file=file)
         print(f"# {date} - {total_time} of {max_time}", file=file)
 
         for worklog in group:
