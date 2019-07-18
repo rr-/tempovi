@@ -9,7 +9,7 @@ import requests
 @dataclass
 class Worklog:
     id: T.Optional[int]
-    date: datetime.datetime
+    date: datetime.date
     duration: datetime.timedelta
     issue: str
     description: str

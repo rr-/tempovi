@@ -67,10 +67,10 @@ def dump_worklogs(worklogs: T.Iterable[Worklog], file: T.IO[str]) -> None:
         for column in columns
     ]
 
-    for date, group in itertools.groupby(
+    for date, group_iter in itertools.groupby(
         worklogs, key=lambda worklog: worklog.date
     ):
-        group = list(group)
+        group = list(group_iter)
         total_time = datetime.timedelta(
             seconds=sum(worklog.duration.total_seconds() for worklog in group)
         )
@@ -105,6 +105,8 @@ def compute_diff(
     source_worklogs: T.List[Worklog], target_worklogs: T.List[Worklog]
 ) -> WorklogDiff:
     diff = WorklogDiff(changed=[], added=[], deleted=[])
+    source_worklog: T.Optional[Worklog]
+    target_worklog: T.Optional[Worklog]
     source_worklog_map = {worklog.id: worklog for worklog in source_worklogs}
     target_worklog_map = {worklog.id: worklog for worklog in target_worklogs}
 
@@ -156,6 +158,7 @@ def main() -> None:
         for worklog in diff.changed:
             api.update_worklog(worklog)
         for worklog in diff.deleted:
+            assert worklog.id
             api.delete_worklog(worklog.id)
 
 
