@@ -61,10 +61,15 @@ class WorklogDiff:
     deleted: T.List[Worklog]
 
 
-def dump_worklogs(worklogs: T.Iterable[Worklog], file: T.IO[str]) -> None:
+def dump_worklogs(
+    start_date: datetime.date,
+    end_date: datetime.date,
+    worklogs: T.Iterable[Worklog],
+    file: T.IO[str],
+) -> None:
     columns = ["id", "duration", "issue", "description"]
     column_widths = [
-        max(len(str(getattr(worklog, column))) for worklog in worklogs)
+        max([0] + [len(str(getattr(worklog, column))) for worklog in worklogs])
         for column in columns
     ]
 
@@ -72,10 +77,9 @@ def dump_worklogs(worklogs: T.Iterable[Worklog], file: T.IO[str]) -> None:
     print("# " + " | ".join(columns), file=file)
     print("# when adding a new item, leave the id column empty.", file=file)
 
-    for date, group_iter in itertools.groupby(
-        worklogs, key=lambda worklog: worklog.date
-    ):
-        group = list(group_iter)
+    for day in range((end_date - start_date).days + 1):
+        date = start_date + datetime.timedelta(days=day)
+        group = [worklog for worklog in worklogs if worklog.date == date]
         total_time = datetime.timedelta(
             seconds=sum(worklog.duration.total_seconds() for worklog in group)
         )
@@ -153,7 +157,9 @@ def main() -> None:
         worklogs = list(api.get_worklogs(args.start.date(), args.end.date()))
 
         with path.open("w") as handle:
-            dump_worklogs(worklogs, file=handle)
+            dump_worklogs(
+                args.start.date(), args.end.date(), worklogs, file=handle
+            )
 
         result = run([EDITOR, path])
         if result.returncode != 0:
