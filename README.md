@@ -7,8 +7,8 @@ Create `tempovi.ini` file in your `$XDG_CONFIG_HOME` dir (usually `~/.config`)
 and provide following values there:
 
 ```ini
-api_key=<your api key for tempo>
-user_id=<your jira user id>
+user-id=<your jira user id>
+api-key=<your api key for tempo>
 ```
 
 Now you can use use tool like so:
