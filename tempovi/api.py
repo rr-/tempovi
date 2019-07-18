@@ -16,16 +16,16 @@ class Worklog:
 
 
 class TempoApi:
-    def __init__(self, tempo_token: str, tempo_account_id: str) -> None:
-        self.tempo_account_id = tempo_account_id
+    def __init__(self, api_key: str, user_id: str) -> None:
+        self.user_id = user_id
         self.session = requests.session()
-        self.session.headers.update({"Authorization": f"Bearer {tempo_token}"})
+        self.session.headers.update({"Authorization": f"Bearer {api_key}"})
 
     def get_worklogs(
         self, start: datetime.date, end: datetime.date
     ) -> T.Iterable[Worklog]:
         url = (
-            f"https://api.tempo.io/core/3/worklogs/user/{self.tempo_account_id}"
+            f"https://api.tempo.io/core/3/worklogs/user/{self.user_id}"
             f"?from={start}&to={end}"
         )
 
@@ -51,7 +51,7 @@ class TempoApi:
 
     def create_worklog(self, worklog: Worklog) -> None:
         data = {
-            "authorAccountId": self.tempo_account_id,
+            "authorAccountId": self.user_id,
             "billableSeconds": None,
             "description": worklog.description,
             "issueKey": worklog.issue,
@@ -68,7 +68,7 @@ class TempoApi:
 
     def update_worklog(self, worklog: Worklog) -> None:
         data = {
-            "authorAccountId": self.tempo_account_id,
+            "authorAccountId": self.user_id,
             "billableSeconds": None,
             "description": worklog.description,
             "issueKey": worklog.issue,

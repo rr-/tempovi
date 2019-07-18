@@ -34,10 +34,10 @@ def parse_args() -> configargparse.Namespace:
     )
 
     parser.add_argument(
-        "--tempo-account-id", required=True, help="Tempo API account ID"
+        "--user-id", required=True, help="Tempo API account ID"
     )
     parser.add_argument(
-        "--tempo-token", required=True, help="Tempo API authentication token"
+        "--api-key", required=True, help="Tempo API authentication token"
     )
 
     start, end = get_default_range()
@@ -127,7 +127,7 @@ def compute_diff(
 
 def main() -> None:
     args = parse_args()
-    api = TempoApi(args.tempo_token, args.tempo_account_id)
+    api = TempoApi(args.api_key, args.user_id)
 
     with tempfile.TemporaryDirectory() as temp_dir:
         path = Path(temp_dir) / "report.txt"
