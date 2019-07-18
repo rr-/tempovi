@@ -67,6 +67,7 @@ def dump_worklogs(worklogs: T.Iterable[Worklog], file: T.IO[str]) -> None:
         for column in columns
     ]
 
+    is_first_day = True
     for date, group_iter in itertools.groupby(
         worklogs, key=lambda worklog: worklog.date
     ):
@@ -76,7 +77,11 @@ def dump_worklogs(worklogs: T.Iterable[Worklog], file: T.IO[str]) -> None:
         )
         max_time = datetime.timedelta(hours=8)
 
+        if not is_first_day:
+            print(file=file)
+        is_first_day = None
         print(f"# {date} - {total_time} of {max_time}", file=file)
+
         for worklog in group:
             for column, column_width in zip(columns, column_widths):
                 is_last = column == columns[-1]
@@ -89,6 +94,8 @@ def dump_worklogs(worklogs: T.Iterable[Worklog], file: T.IO[str]) -> None:
 
 def read_worklogs(file: T.IO[str]) -> T.Iterable[Worklog]:
     for line in file:
+        if not line.strip():
+            continue
         if line.startswith("#"):
             continue
         row = [word.strip() for word in line.split("|")]
