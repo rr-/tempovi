@@ -12,13 +12,7 @@ import configargparse
 import dateutil.parser
 import pytimeparse
 
-from tempovi.api import (
-    Worklog,
-    create_worklog,
-    delete_worklog,
-    get_worklogs,
-    update_worklog,
-)
+from tempovi.api import TempoApi, Worklog
 
 CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", "~/.config")).expanduser()
 EDITOR = os.environ.get("EDITOR", "vim")
@@ -131,18 +125,12 @@ def compute_diff(
 
 def main() -> None:
     args = parse_args()
+    api = TempoApi(args.tempo_token, args.tempo_account_id)
 
     with tempfile.TemporaryDirectory() as temp_dir:
         path = Path(temp_dir) / "report.txt"
 
-        worklogs = list(
-            get_worklogs(
-                args.tempo_token,
-                args.tempo_account_id,
-                args.start.date(),
-                args.end.date(),
-            )
-        )
+        worklogs = list(api.get_worklogs(args.start.date(), args.end.date()))
 
         with path.open("w") as handle:
             dump_worklogs(worklogs, file=handle)
@@ -164,11 +152,11 @@ def main() -> None:
         )
 
         for worklog in diff.added:
-            create_worklog(args.tempo_token, args.tempo_account_id, worklog)
+            api.create_worklog(worklog)
         for worklog in diff.changed:
-            update_worklog(args.tempo_token, args.tempo_account_id, worklog)
+            api.update_worklog(worklog)
         for worklog in diff.deleted:
-            delete_worklog(args.tempo_token, args.tempo_account_id, worklog.id)
+            api.delete_worklog(worklog.id)
 
 
 if __name__ == "__main__":
