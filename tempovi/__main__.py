@@ -3,6 +3,7 @@ import datetime
 import itertools
 import os
 import re
+import sys
 import tempfile
 import typing as T
 from dataclasses import dataclass
@@ -147,6 +148,33 @@ def compute_diff(
     return diff
 
 
+def apply_diff(api: TempoApi, diff: WorklogDiff) -> None:
+    for worklog in diff.added:
+        api.create_worklog(worklog)
+    for worklog in diff.changed:
+        api.update_worklog(worklog)
+    for worklog in diff.deleted:
+        assert worklog.id
+        api.delete_worklog(worklog.id)
+
+
+def run_editor_and_apply_diff(
+    api: TempoApi, source_worklogs: T.List[Worklog], path: Path
+) -> None:
+    result = run([EDITOR, path])
+    if result.returncode != 0:
+        print("Editor exited with non-zero status, bailing out")
+        exit(1)
+
+    with path.open("r") as handle:
+        new_worklogs = list(read_worklogs(file=handle))
+
+    diff = compute_diff(
+        source_worklogs=source_worklogs, target_worklogs=new_worklogs
+    )
+    apply_diff(api, diff)
+
+
 def main() -> None:
     args = parse_args()
     api = TempoApi(args.api_key, args.user_id)
@@ -161,29 +189,18 @@ def main() -> None:
                 args.start.date(), args.end.date(), worklogs, file=handle
             )
 
-        result = run([EDITOR, path])
-        if result.returncode != 0:
-            print("Editor exited with non-zero status, bailing out")
-            exit(1)
-
-        with path.open("r") as handle:
+        while True:
             try:
-                new_worklogs = list(read_worklogs(file=handle))
-            except ValueError as ex:
-                print(f"Invalid syntax ({ex}), bailing out")
-                exit(1)
-
-        diff = compute_diff(
-            source_worklogs=worklogs, target_worklogs=new_worklogs
-        )
-
-        for worklog in diff.added:
-            api.create_worklog(worklog)
-        for worklog in diff.changed:
-            api.update_worklog(worklog)
-        for worklog in diff.deleted:
-            assert worklog.id
-            api.delete_worklog(worklog.id)
+                run_editor_and_apply_diff(api, worklogs, path)
+            except Exception as ex:
+                print("Error:", file=sys.stderr)
+                print(ex, file=sys.stderr)
+                try:
+                    input("Press enter to edit the file again, ^C to exit")
+                except KeyboardInterrupt:
+                    exit(0)
+            else:
+                exit(0)
 
 
 if __name__ == "__main__":
