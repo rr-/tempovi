@@ -19,6 +19,10 @@ from tempovi.api import TempoApi, Worklog
 
 CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", "~/.config")).expanduser()
 EDITOR = os.environ.get("EDITOR", "vim")
+DEFAULT_PROLOG = (
+    "# vim: syntax=config\n"
+    "# when adding a new work log, leave the id column empty.\n"
+)
 
 
 def get_date_range(
@@ -50,6 +54,14 @@ def parse_args() -> configargparse.Namespace:
     )
     parser.add_argument(
         "--api-key", required=True, help="Tempo API authentication token"
+    )
+    parser.add_argument(
+        "--prolog",
+        type=Path,
+        help=(
+            "Optional path to custom prolog file "
+            "(header shown at the top when editing the sheets)"
+        ),
     )
 
     parser.add_argument(
@@ -124,9 +136,6 @@ def dump_worklogs(
     file: T.IO[str],
 ) -> None:
     columns = ["id", "duration", "issue", "description"]
-
-    print("# vim: syntax=config", file=file)
-    print("# when adding a new work log, leave the id column empty.", file=file)
 
     for day in range((end_date - start_date).days + 1):
         date = start_date + datetime.timedelta(days=day)
@@ -234,12 +243,17 @@ def main() -> None:
         print("End date cannot be earlier than start date")
         exit(1)
 
+    prolog = (
+        args.prolog.expanduser().read_text() if args.prolog else DEFAULT_PROLOG
+    )
+
     with tempfile.TemporaryDirectory() as temp_dir:
         path = Path(temp_dir) / "report.txt"
 
         worklogs = list(api.get_worklogs(start, end))
 
         with path.open("w") as handle:
+            print(prolog, file=handle, end="")
             dump_worklogs(start, end, worklogs, file=handle)
 
         while True:
