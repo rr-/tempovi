@@ -46,7 +46,7 @@ def get_date_range(
 
 def parse_args() -> configargparse.Namespace:
     parser = configargparse.ArgumentParser(
-        prog="tempovi", default_config_files=[CONFIG_DIR / "tempovi.ini"]
+        prog="tempovi", default_config_files=[str(CONFIG_DIR / "tempovi.ini")]
     )
 
     parser.add_argument(
