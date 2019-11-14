@@ -90,6 +90,33 @@ class WorklogDiff:
     deleted: T.List[Worklog]
 
 
+def dump_worklog_day(
+    date: datetime.date,
+    total_time: datetime.timedelta,
+    columns: T.List[str],
+    rows: T.List[T.List[str]],
+    file: T.IO[str],
+) -> None:
+    print(file=file)
+    print(f"# {date} - total time: {total_time}", file=file)
+
+    rows = rows[:]
+    rows.insert(0, columns[:])
+    rows[0][0] = "# " + rows[0][0]
+
+    column_widths = [
+        max(len(row[i]) for row in rows) for i in range(len(columns))
+    ]
+
+    for row in rows:
+        for column, column_width, item in zip(columns, column_widths, row):
+            is_last = column == columns[-1]
+            if is_last:
+                print(item, file=file)
+            else:
+                print(item.ljust(column_width), end=" | ", file=file)
+
+
 def dump_worklogs(
     start_date: datetime.date,
     end_date: datetime.date,
@@ -97,14 +124,8 @@ def dump_worklogs(
     file: T.IO[str],
 ) -> None:
     columns = ["id", "duration", "issue", "description"]
-    column_widths = [
-        max([0] + [len(str(getattr(worklog, column))) for worklog in worklogs])
-        for column in columns
-    ]
 
-    print("# syntax:", file=file)
-    print("# " + " | ".join(columns), file=file)
-    print("# when adding a new item, leave the id column empty.", file=file)
+    print("# when adding a new work log, leave the id column empty.", file=file)
 
     for day in range((end_date - start_date).days + 1):
         date = start_date + datetime.timedelta(days=day)
@@ -113,17 +134,16 @@ def dump_worklogs(
             seconds=sum(worklog.duration.total_seconds() for worklog in group)
         )
 
-        print(file=file)
-        print(f"# {date} - total time: {total_time}", file=file)
-
-        for worklog in group:
-            for column, column_width in zip(columns, column_widths):
-                is_last = column == columns[-1]
-                item = str(getattr(worklog, column))
-                if is_last:
-                    print(item, file=file)
-                else:
-                    print(item.ljust(column_width), end=" | ", file=file)
+        dump_worklog_day(
+            date=date,
+            total_time=total_time,
+            columns=columns,
+            rows=[
+                [str(getattr(worklog, column)) for column in columns]
+                for worklog in group
+            ],
+            file=file,
+        )
 
 
 def read_worklogs(file: T.IO[str]) -> T.Iterable[Worklog]:
@@ -137,8 +157,9 @@ def read_worklogs(file: T.IO[str]) -> T.Iterable[Worklog]:
             last_date = dateutil.parser.parse(match.group(1)).date()
             continue
         elif line.startswith("#"):
-            last_date = None
             continue
+        elif not line:
+            last_date = None
 
         row = [word.strip() for word in line.split("|")]
         if not last_date:
