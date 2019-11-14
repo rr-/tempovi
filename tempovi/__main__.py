@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import calendar
 import datetime
 import itertools
 import os
@@ -20,14 +21,23 @@ CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", "~/.config")).expanduser()
 EDITOR = os.environ.get("EDITOR", "vim")
 
 
-def get_default_range() -> T.Tuple[datetime.datetime, datetime.datetime]:
-    today = datetime.datetime.today()
+def get_date_range(
+    args: configargparse.Namespace
+) -> T.Tuple[datetime.date, datetime.date]:
+    today = datetime.datetime.today().date()
+    if args.start or args.end:
+        return (
+            today if not args.start else args.start.date(),
+            today if not args.end else args.end.date(),
+        )
+    if args.date:
+        return (args.date.date(), args.date.date())
+    if args.month:
+        _, days_in_month = calendar.monthrange(today.year, today.month)
+        start = datetime.datetime(today.year, today.month, 1)
+        end = datetime.datetime(today.year, today.month, days_in_month)
+        return (start.date(), end.date())
     return (today, today)
-    # import calendar
-    # _, days_in_month = calendar.monthrange(today.year, today.month)
-    # start = datetime.datetime(today.year, today.month, 1)
-    # end = datetime.datetime(today.year, today.month, days_in_month)
-    # return (start, end)
 
 
 def parse_args() -> configargparse.Namespace:
@@ -42,12 +52,30 @@ def parse_args() -> configargparse.Namespace:
         "--api-key", required=True, help="Tempo API authentication token"
     )
 
-    start, end = get_default_range()
     parser.add_argument(
-        "--start", type=dateutil.parser.parse, default=start, help="Start date"
+        "--start",
+        type=dateutil.parser.parse,
+        help="Start date of the range to edit",
     )
     parser.add_argument(
-        "--end", type=dateutil.parser.parse, default=end, help="End date"
+        "--end",
+        type=dateutil.parser.parse,
+        help="End date of the range to edit",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--date",
+        "--day",
+        type=dateutil.parser.parse,
+        help="Date to edit",
+    )
+
+    parser.add_argument(
+        "-M",
+        "--month",
+        action="store_true",
+        help="Edit the entire current month",
     )
 
     parser.add_argument("output", type=Path, help="Output path", nargs="?")
@@ -179,15 +207,18 @@ def main() -> None:
     args = parse_args()
     api = TempoApi(args.api_key, args.user_id)
 
+    start, end = get_date_range(args)
+    if end < start:
+        print("End date cannot be earlier than start date")
+        exit(1)
+
     with tempfile.TemporaryDirectory() as temp_dir:
         path = Path(temp_dir) / "report.txt"
 
-        worklogs = list(api.get_worklogs(args.start.date(), args.end.date()))
+        worklogs = list(api.get_worklogs(start, end))
 
         with path.open("w") as handle:
-            dump_worklogs(
-                args.start.date(), args.end.date(), worklogs, file=handle
-            )
+            dump_worklogs(start, end, worklogs, file=handle)
 
         while True:
             try:
