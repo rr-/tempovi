@@ -21,6 +21,7 @@ This will launch `$EDITOR` in interactive mode, where you can edit your
 timesheet. It'll look like this:
 
 ```
+# vim: syntax=config
 # when adding a new work log, leave the id column empty.
 
 # 2019-07-18 - total time: 9:00:00

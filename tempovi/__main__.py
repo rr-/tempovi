@@ -125,6 +125,7 @@ def dump_worklogs(
 ) -> None:
     columns = ["id", "duration", "issue", "description"]
 
+    print("# vim: syntax=config", file=file)
     print("# when adding a new work log, leave the id column empty.", file=file)
 
     for day in range((end_date - start_date).days + 1):
