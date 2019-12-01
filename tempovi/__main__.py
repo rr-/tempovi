@@ -234,6 +234,16 @@ def run_editor_and_apply_diff(
     apply_diff(api, diff)
 
 
+def preprocess_prolog(prolog: str) -> str:
+    ret = ""
+    for line in prolog.splitlines():
+        ret += (
+            f"# {line}" if line.strip() and not line.startswith("#") else line
+        )
+        ret += "\n"
+    return ret
+
+
 def main() -> None:
     args = parse_args()
     api = TempoApi(args.api_key, args.user_id)
@@ -253,7 +263,7 @@ def main() -> None:
         worklogs = list(api.get_worklogs(start, end))
 
         with path.open("w") as handle:
-            print(prolog, file=handle, end="")
+            print(preprocess_prolog(prolog), file=handle, end="")
             dump_worklogs(start, end, worklogs, file=handle)
 
         while True:
