@@ -30,7 +30,7 @@ To set up the API key, visit here: https://id.atlassian.com/manage/api-tokens
 
 ### Usage
 
-Now you can use use tool like so:
+Now you can use the tool like so:
 
 ```console
 tempovi
