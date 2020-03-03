@@ -1,15 +1,34 @@
 Simple tool to edit timesheets on Tempo
----------------------------------------
+=======================================
 
-# Usage
+### Setting it up
 
-Create `tempovi.ini` file in your `$XDG_CONFIG_HOME` dir (usually `~/.config`)
-and provide following values there:
+First, install the package:
+
+```
+git clone https://github.com/rr-/tempovi
+cd tempovi
+python3 -m pip install --user .
+```
+
+Then, provide your credentials by creating `tempovi.ini` file in your
+`$XDG_CONFIG_HOME` directory (usually `~/.config`) with the following values:
 
 ```ini
 user-id=<your jira user id>
 api-key=<your api key for tempo>
 ```
+
+To get the user ID:
+
+- visit any of your Atlassian products
+- in the bottom left corner of the screen, click on your avatar
+- choose "Profile"
+- copy the bold part of the URL https://*******.atlassian.net/jira/people/<b>user-id</b>
+
+To set up the API key, visit here: https://id.atlassian.com/manage/api-tokens
+
+### Usage
 
 Now you can use use tool like so:
 
